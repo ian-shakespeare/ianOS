@@ -11,6 +11,8 @@ use ian_os::{println,print};
 pub extern "C" fn _start() -> ! {
     println!("Hello, world{}", "!");
 
+    ian_os::init();
+
     #[cfg(test)]
     test_main();
 
