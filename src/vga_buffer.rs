@@ -139,3 +139,59 @@ macro_rules! println {
     () => (print!("\n"));
     ($($arg:tt)*) => (print!("{}\n", format_args!($($arg)*)));
 }
+
+#[test_case]
+fn test_println_simple() {
+    println!("test_println_simple output");
+}
+
+#[test_case]
+fn test_println_many() {
+    for _ in 0..200 {
+        println!("test_println_many output");
+    }
+}
+
+#[test_case]
+fn test_println_output() {
+    let s = "This is a single line string to test print output.";
+    println!("{}", s);
+    for (i, char) in s.chars().enumerate() {
+        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+        assert_eq!(screen_char, char);
+    }
+}
+
+#[test_case]
+fn test_print_output_linewrap() {
+    let line1 = "This is a multi line string to test the wrapping of the VGA writer. This is a ha";
+    let line2 = "ndful of extra characters.";
+    print!("{}{}", line1, line2);
+    // Line 1
+    for (i, char) in line1.chars().enumerate() {
+        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+        assert_eq!(screen_char, char);
+    }
+    // Line 2
+    for (i, char) in line2.chars().enumerate() {
+        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i].read().ascii_character);
+        assert_eq!(screen_char, char);
+    }
+}
+
+#[test_case]
+fn test_println_output_linewrap() {
+    let line1 = "This is a multi line string to test the wrapping of the VGA writer. This is a ha";
+    let line2 = "ndful of extra characters.";
+    println!("{}{}", line1, line2);
+    // Line 1
+    for (i, char) in line1.chars().enumerate() {
+        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 3][i].read().ascii_character);
+        assert_eq!(screen_char, char);
+    }
+    // Line 2
+    for (i, char) in line2.chars().enumerate() {
+        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+        assert_eq!(screen_char, char);
+    }
+}
