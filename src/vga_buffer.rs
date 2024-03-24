@@ -126,7 +126,10 @@ lazy_static! {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 #[macro_export]
@@ -154,44 +157,56 @@ fn test_println_many() {
 
 #[test_case]
 fn test_println_output() {
+    use x86_64::instructions::interrupts;
+
     let s = "This is a single line string to test print output.";
-    println!("{}", s);
-    for (i, char) in s.chars().enumerate() {
-        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
-        assert_eq!(screen_char, char);
-    }
+    interrupts::without_interrupts(|| {
+        println!("{}", s);
+        for (i, char) in s.chars().enumerate() {
+            let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+            assert_eq!(screen_char, char);
+        }
+    });
 }
 
 #[test_case]
 fn test_print_output_linewrap() {
+    use x86_64::instructions::interrupts;
+
     let line1 = "This is a multi line string to test the wrapping of the VGA writer. This is a ha";
     let line2 = "ndful of extra characters.";
-    print!("{}{}", line1, line2);
-    // Line 1
-    for (i, char) in line1.chars().enumerate() {
-        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
-        assert_eq!(screen_char, char);
-    }
-    // Line 2
-    for (i, char) in line2.chars().enumerate() {
-        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i].read().ascii_character);
-        assert_eq!(screen_char, char);
-    }
+    interrupts::without_interrupts(|| {
+        print!("{}{}", line1, line2);
+        // Line 1
+        for (i, char) in line1.chars().enumerate() {
+            let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+            assert_eq!(screen_char, char);
+        }
+        // Line 2
+        for (i, char) in line2.chars().enumerate() {
+            let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 1][i].read().ascii_character);
+            assert_eq!(screen_char, char);
+        }
+    });
 }
 
 #[test_case]
 fn test_println_output_linewrap() {
+    use x86_64::instructions::interrupts;
+
     let line1 = "This is a multi line string to test the wrapping of the VGA writer. This is a ha";
     let line2 = "ndful of extra characters.";
-    println!("{}{}", line1, line2);
-    // Line 1
-    for (i, char) in line1.chars().enumerate() {
-        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 3][i].read().ascii_character);
-        assert_eq!(screen_char, char);
-    }
-    // Line 2
-    for (i, char) in line2.chars().enumerate() {
-        let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
-        assert_eq!(screen_char, char);
-    }
+    interrupts::without_interrupts(|| {
+        println!("{}{}", line1, line2);
+        // Line 1
+        for (i, char) in line1.chars().enumerate() {
+            let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 3][i].read().ascii_character);
+            assert_eq!(screen_char, char);
+        }
+        // Line 2
+        for (i, char) in line2.chars().enumerate() {
+            let screen_char = char::from(WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read().ascii_character);
+            assert_eq!(screen_char, char);
+        }
+    });
 }
